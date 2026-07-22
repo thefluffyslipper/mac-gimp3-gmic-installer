@@ -1,8 +1,7 @@
 # G'MIC-Qt plug-in for GIMP 3.x on macOS — build & install script
 
 No prebuilt [G'MIC](https://gmic.eu) plug-in binaries exist for GIMP 3.x on
-macOS (gmic.eu ships Windows/Linux only; MacPorts' plugin targets GIMP 2.10;
-Homebrew's `gmic` is CLI-only). This script builds one from source and
+macOS. This script builds one from source and
 installs it into your user GIMP profile.
 
 ## Prerequisites
