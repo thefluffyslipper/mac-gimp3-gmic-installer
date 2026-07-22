@@ -5,27 +5,57 @@ macOS (gmic.eu ships Windows/Linux only; MacPorts' plugin targets GIMP 2.10;
 Homebrew's `gmic` is CLI-only). This script builds one from source and
 installs it into your user GIMP profile.
 
+## Prerequisites
+- On macOS 13+ on Apple Silicon or Intel
+- Download and install GIMP v3.x from https://www.gimp.org/downloads/
+- Install [Homebrew](https://brew.sh) and Xcode Command Line Tools
+  (run `xcode-select --install`)
+
+
 ## Usage
 
+Download the `./install-gmic-for-gimp-macos.sh` file locally. I suggest placing it on your Desktop.
+
+Run:
+
 ```sh
+cd ~/Desktop
+chmod +x ./install-gmic-for-gimp-macos.sh
 ./install-gmic-for-gimp-macos.sh
 ```
 
-Then restart GIMP, open an image, and find **Filters → G'MIC-Qt**.
+Restart your machine, and then run it again:
+
+```sh
+cd ~/Desktop
+./install-gmic-for-gimp-macos.sh
+```
+
+The script can take 10–30 minutes to finish compiling.
+
+
+Open GIMP, open an image, and verify **Filters → G'MIC-Qt** exists. Done!
+
+
+## Updating and uninstallation
 
 Re-run the script to update after a new G'MIC or GIMP release.
 `--uninstall` removes the plug-in; `--help` lists all options.
 
-## Requirements
+Notes / tips
+- If you don't want to run many manual commands, the install script will
+  attempt to install XQuartz automatically (unless you pass `--skip-deps`).
+  If XQuartz is newly installed the script will ask you to restart (or
+  log out/in) and re-run the script.
+- The script also applies a small patch to `gmic-*/gmic-qt/CMakeLists.txt`
+  to enable `cimg_display=1` and wire up X11 includes/libs so the Qt GUI
+  works correctly on macOS for recent G'MIC releases.
+- Example run (after installing GIMP and XQuartz and restarting):
 
-- macOS 13+ on Apple Silicon or Intel
-- The official GIMP 3.x app bundle in `/Applications`
-  (`brew install --cask gimp` or the DMG from gimp.org)
-- [Homebrew](https://brew.sh) and Xcode Command Line Tools
-  (`xcode-select --install`)
-
-The script installs its build dependencies via Homebrew (Qt 5, gegl, fftw,
-etc. — a few GB on first run) and needs 10–30 minutes to compile.
+```sh
+chmod +x ./install-gmic-for-gimp-macos.sh
+./install-gmic-for-gimp-macos.sh --gmic-version 4.0.3
+```
 
 ## How it works
 

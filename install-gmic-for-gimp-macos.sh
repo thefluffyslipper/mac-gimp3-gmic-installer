@@ -132,13 +132,27 @@ log "using Qt$QT_CHOICE ($QT_FORMULA)"
 
 # ---------------------------------------------------------------- brew deps
 DEPS=(cmake pkgconf libpng fftw libomp glib gegl gexiv2 gdk-pixbuf cairo pango "$QT_FORMULA")
+# macOS-only casks we need (installed via `brew install --cask`)
+CASKS=(xquartz)
 if [ "$SKIP_DEPS" = 1 ]; then
   log "skipping dependency installation (--skip-deps)"
 else
-  log "installing/checking Homebrew dependencies: ${DEPS[*]}"
+  log "installing/checking Homebrew formula dependencies: ${DEPS[*]}"
   for f in "${DEPS[@]}"; do
     brew list --formula "$f" >/dev/null 2>&1 || brew install "$f"
   done
+
+  # Install macOS casks (e.g. XQuartz) if missing. XQuartz typically requires
+  # a logout/login or restart after first install; if we install it here we
+  # exit with a friendly message so the user can restart before continuing.
+  HAVE_XQUARTZ=0
+  if brew list --cask xquartz >/dev/null 2>&1; then HAVE_XQUARTZ=1; fi
+  for c in "${CASKS[@]}"; do
+    brew list --cask "$c" >/dev/null 2>&1 || brew install --cask "$c"
+  done
+  if [ "$HAVE_XQUARTZ" -eq 0 ] && brew list --cask xquartz >/dev/null 2>&1; then
+    die "XQuartz was just installed. Please restart (or log out/in) and re-run this script."
+  fi
 fi
 command -v pkg-config >/dev/null 2>&1 || die "pkg-config not found even after installing pkgconf"
 command -v cmake      >/dev/null 2>&1 || die "cmake not found"
@@ -176,6 +190,26 @@ fetch "$GIMP_URL" "$GIMP_TARBALL"
 [ -d "gmic-$GMIC_VERSION" ]  || { log "extracting $GMIC_TARBALL";  tar xzf "$GMIC_TARBALL"; }
 [ -d "gimp-$GIMP_FULL" ]     || { log "extracting $GIMP_TARBALL";  tar xJf "$GIMP_TARBALL"; }
 [ -d "gmic-$GMIC_VERSION/gmic-qt" ] || die "gmic tarball layout unexpected (no gmic-qt/ inside)"
+
+# For macOS builds (notably G'MIC 4.x), enable cimg display/X11 glue in the
+# gmic-qt CMakeLists so the Qt GUI can use X11 via XQuartz. This mirrors the
+# manual patch some users apply upstream.
+if [ -f "$WORK/gmic-$GMIC_VERSION/gmic-qt/CMakeLists.txt" ]; then
+  log "ensuring gmic-qt CMakeLists enables cimg_display and X11 includes"
+  cd "$WORK/gmic-$GMIC_VERSION/gmic-qt"
+  [ -f CMakeLists.txt.orig ] || cp CMakeLists.txt CMakeLists.txt.orig
+  # Only apply when the file disables cimg display; the perl one-liner edits
+  # the file in-place and preserves indentation.
+  if grep -q "add_definitions(-Dcimg_display=0)" CMakeLists.txt; then
+    perl -0pi -e 's/add_definitions\(-Dcimg_display=0\)\n(\s*)add_definitions\(-D_IS_MACOS_\)/add_definitions(-Dcimg_display=1)\n$1add_definitions(-D_IS_MACOS_)\n$1find_package(X11 REQUIRED)\n$1include_directories(SYSTEM \\${X11_INCLUDE_DIR})\n$1set(gmic_qt_LIBRARIES \\${gmic_qt_LIBRARIES} \\${X11_LIBRARIES})/' CMakeLists.txt
+    log "patched CMakeLists.txt (backup at CMakeLists.txt.orig)"
+  else
+    log "CMakeLists.txt already appears patched; skipping"
+  fi
+  # quick sanity grep to show nearby lines (non-fatal)
+  grep -A5 'cimg_display=1' CMakeLists.txt | tail -8 || true
+  cd "$WORK"
+fi
 
 # ------------------------------------------------- fake GIMP dev prefix
 # Headers come from the GIMP source tree; libraries from the app bundle.
