@@ -4,6 +4,9 @@ No prebuilt [G'MIC](https://gmic.eu) plug-in binaries exist for GIMP 3.x on
 macOS. This script builds one from source and
 installs it into your user GIMP profile.
 
+<img width="1143" height="794" alt="Screenshot 2026-07-22 at 1 55 08 PM" src="https://github.com/user-attachments/assets/5cf7e8c2-69c1-454f-93cf-7ca3365af8a0" />
+
+
 ## Prerequisites
 - On macOS 13+ on Apple Silicon or Intel
 - Download and install GIMP v3.x from https://www.gimp.org/downloads/
@@ -90,3 +93,5 @@ Build recipe pioneered by Sébastien Guyader
 ([pixls.us thread](https://discuss.pixls.us/t/gmic-plugin-for-gimp-3-2-in-macos/57708))
 and the [resynthesizer macOS port](https://github.com/bootchk/resynthesizer/pull/159);
 automated and generalized here. License: CC0 / public domain. No warranty.
+
+Tweaked this repo https://github.com/essigwurst/mac-gimp3-gmic-installer to make what worked for me. Most notably, I fixed it so certain functions like Black & White > Colorize [Interactive] work (this required installing XQuartz).
