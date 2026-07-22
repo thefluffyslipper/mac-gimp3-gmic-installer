@@ -16,9 +16,9 @@ installs it into your user GIMP profile.
 
 ## Usage
 
-Download the `./install-gmic-for-gimp-macos.sh` file locally. I suggest placing it on your Desktop.
+1. Download the `./install-gmic-for-gimp-macos.sh` file locally. I suggest placing it on your Desktop.
 
-Run:
+2. Run:
 
 ```sh
 cd ~/Desktop
@@ -26,7 +26,7 @@ chmod +x ./install-gmic-for-gimp-macos.sh
 ./install-gmic-for-gimp-macos.sh
 ```
 
-Restart your machine, and then run it again:
+3. Restart your machine, and then run it again:
 
 ```sh
 cd ~/Desktop
@@ -36,7 +36,7 @@ cd ~/Desktop
 The script can take 10–30 minutes to finish compiling.
 
 
-Open GIMP, open an image, and verify **Filters → G'MIC-Qt** exists. Done!
+4. Open GIMP, open an image, and verify **Filters → G'MIC-Qt** exists. Done!
 
 
 ## Updating and uninstallation
