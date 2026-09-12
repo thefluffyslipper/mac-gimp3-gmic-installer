@@ -266,6 +266,29 @@ if [ -f "$WORK/gmic-$GMIC_VERSION/gmic-qt/CMakeLists.txt" ]; then
   cd "$WORK"
 fi
 
+# The upstream CMakeLists hardcodes -mmacosx-version-min=10.9 for the APPLE
+# block. That predates SDK availability annotations on APIs Qt6 now uses
+# (e.g. QFileDevice::path(), gated to macOS 10.15+), so compiling against
+# Homebrew's Qt6 (built with a minos of 14.0) fails with
+#   error: 'path' is unavailable: introduced in macOS 10.15
+# because clang enforces the (too old) 10.9 floor against 10.15+-only symbols.
+# Replace 10.9 with the actual minimum macOS Homebrew's Qt binary was built
+# for, read from its LC_BUILD_VERSION/LC_VERSION_MIN_MACOSX load command.
+if [ -f "$WORK/gmic-$GMIC_VERSION/gmic-qt/CMakeLists.txt" ]; then
+  cd "$WORK/gmic-$GMIC_VERSION/gmic-qt"
+  QT_LIB="$QT_PREFIX/lib/QtCore.framework/QtCore"
+  [ -e "$QT_LIB" ] || QT_LIB="$QT_PREFIX/lib/QtCore.framework/Versions/A/QtCore"
+  QT_MIN_OS="$(otool -l "$QT_LIB" 2>/dev/null \
+    | awk '/LC_BUILD_VERSION/{f=1} f && /minos/{print $2; exit} /LC_VERSION_MIN_MACOSX/{f=2} f==2 && /version/{print $2; exit}')"
+  if [ -n "$QT_MIN_OS" ] && grep -q -- "-mmacosx-version-min=10.9" CMakeLists.txt; then
+    perl -pi -e "s/-mmacosx-version-min=10\.9/-mmacosx-version-min=$QT_MIN_OS/" CMakeLists.txt
+    log "patched CMakeLists.txt macOS deployment target: 10.9 -> $QT_MIN_OS (matches Qt$QT_CHOICE's own minimum)"
+  elif [ -z "$QT_MIN_OS" ]; then
+    warn "could not determine Qt's minimum macOS version from $QT_LIB; leaving -mmacosx-version-min=10.9 (build may fail on unavailable APIs)"
+  fi
+  cd "$WORK"
+fi
+
 # ------------------------------------------------- fake GIMP dev prefix
 # Headers come from the GIMP source tree; libraries from the app bundle.
 DEV="$WORK/gimp-dev-$GIMP_FULL"
