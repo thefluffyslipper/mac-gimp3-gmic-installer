@@ -126,7 +126,16 @@ done
 Install it first:  brew install --cask gimp   (or from https://www.gimp.org)
 Or pass its location with --gimp-app /path/to/GIMP.app"
 
-BUNDLE="$GIMP_APP/Contents/Resources"
+# GIMP.app's bundled libraries lived under Contents/Resources/lib up through
+# 3.2.4; 3.2.6 moved them to Contents/lib. Autodetect by checking which one
+# actually has a libgimp-*.dylib, so both old and new layouts work.
+if compgen -G "$GIMP_APP/Contents/lib/libgimp-"'*.dylib' >/dev/null 2>&1; then
+  BUNDLE="$GIMP_APP/Contents"
+elif compgen -G "$GIMP_APP/Contents/Resources/lib/libgimp-"'*.dylib' >/dev/null 2>&1; then
+  BUNDLE="$GIMP_APP/Contents/Resources"
+else
+  die "could not find libgimp-*.dylib under $GIMP_APP/Contents/lib or $GIMP_APP/Contents/Resources/lib"
+fi
 GIMP_BIN="$GIMP_APP/Contents/MacOS/gimp"
 [ -x "$GIMP_BIN" ] || die "no gimp executable inside $GIMP_APP"
 
@@ -332,7 +341,7 @@ Name: GIMP
 Description: GIMP Library (headers from source tarball, libs from GIMP.app)
 Version: $GIMP_FULL
 Cflags: -I\${includedir}/gimp-$GIMP_API $DEPS_CFLAGS
-Libs:$BUNDLE_LIBS -Wl,-rpath,$GIMP_APP/Contents/Resources$ALIAS_FLAGS
+Libs:$BUNDLE_LIBS -Wl,-rpath,$BUNDLE/lib$ALIAS_FLAGS
 EOF
 mkdir -p "$DEV/lib/gimp/$GIMP_API"
 
@@ -377,7 +386,7 @@ log "verifying linkage"
 if otool -L "$PLUGIN" | grep -E "$BREW/(opt|Cellar)/(glib|gegl|babl)/" ; then
   die "plug-in links Homebrew glib/gegl/babl -- it would crash inside GIMP. Aborting install."
 fi
-otool -L "$PLUGIN" | grep -q '@rpath/lib/libgimp-' \
+otool -L "$PLUGIN" | grep -q '@rpath/libgimp-' \
   || die "plug-in does not link the bundle's libgimp -- something went wrong"
 
 # ---------------------------------------------------------------- install
